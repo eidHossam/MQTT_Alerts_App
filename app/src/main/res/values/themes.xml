@@ -1,0 +1,11 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.MQTT_Alerts" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">@color/darkBlue</item>
+        <item name="primaryBG_color">@color/greyBG</item>
+        <item name="colorError">@android:color/holo_red_light</item>
+    </style>
+
+    <style name="Theme.MQTT_Alerts" parent="Base.Theme.MQTT_Alerts" />
+</resources>

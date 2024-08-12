@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="greyBG">#f0ecf3</color>
+    <color name="darkBlue">#303376</color>
+    <color name="lightBlue">#0098FF</color>
+    <color name="dividerColor">#a8a5aa</color>
+    <color name="normalAlertColor">@android:color/holo_green_dark</color>
+    <color name="warningAlertColor">#FF9800</color>
+    <color name="criticalAlertColor">#FF0000</color>
+</resources>
