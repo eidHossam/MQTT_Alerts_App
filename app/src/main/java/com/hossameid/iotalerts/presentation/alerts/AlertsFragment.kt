@@ -1,5 +1,6 @@
 package com.hossameid.iotalerts.presentation.alerts
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -12,12 +13,14 @@ import com.hossameid.iotalerts.R
 import com.hossameid.iotalerts.databinding.FragmentFirstBinding
 import com.hossameid.iotalerts.domain.models.TopicResponseModel
 import com.hossameid.iotalerts.presentation.alerts.adapter.AlertsAdapter
+import com.hossameid.iotalerts.utils.PreferencesHelper
+import com.hossameid.iotalerts.utils.PreferencesHelper.brokerUri
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
 class AlertsFragment : Fragment() {
-
+    private lateinit var sharedPreferences : SharedPreferences
     private var _binding: FragmentFirstBinding? = null
 
     // This property is only valid between onCreateView and
@@ -30,8 +33,11 @@ class AlertsFragment : Fragment() {
     ): View {
 
         _binding = FragmentFirstBinding.inflate(inflater, container, false)
-        return binding.root
 
+        //Init the shared preference
+        sharedPreferences = PreferencesHelper.getSharedPreference(this.requireContext())
+
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -61,6 +67,14 @@ class AlertsFragment : Fragment() {
         binding.alertsRecyclerView.adapter = adapter
 
         adapter.submitList(alertsList)
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        //Update the current broker UI element
+        val uri = sharedPreferences.brokerUri
+        binding.currentBrokerTextView.text = uri
     }
 
     override fun onDestroyView() {

@@ -2,7 +2,7 @@ package com.hossameid.iotalerts.presentation.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.hossameid.iotalerts.R
+import com.hossameid.iotalerts.utils.PreferencesHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,5 +17,5 @@ object SharedPreferencesModule {
     @Provides
     @Singleton
     fun providesSharedPreference(@ApplicationContext context: Context) : SharedPreferences =
-        context.getSharedPreferences(context.getString(R.string.PREF_NAME), Context.MODE_PRIVATE)
+        PreferencesHelper.getSharedPreference(context)
 }

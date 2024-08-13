@@ -96,9 +96,28 @@
         android:textSize="@dimen/_14sdp"
         android:textStyle="bold"
         app:cornerRadius="6.5dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:rippleColor="@color/white"
+        app:layout_constraintBottom_toTopOf="@id/disconnectBtn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/passwordLayout"
         app:shapeAppearance="?attr/shapeAppearanceCornerSmall" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/disconnectBtn"
+        android:layout_width="@dimen/_260sdp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/disconnect"
+        android:textColor="@color/white"
+        android:textSize="@dimen/_14sdp"
+        android:textStyle="bold"
+        app:cornerRadius="6.5dp"
+        app:rippleColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/connectBtn"
+        app:shapeAppearance="?attr/shapeAppearanceCornerSmall" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

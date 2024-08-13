@@ -14,7 +14,7 @@ import javax.inject.Inject
 class MqttRepoImpl @Inject constructor(
     private val context: Context
 ) : MqttRepo {
-    private lateinit var mqttClient: MqttAndroidClient
+    private var mqttClient: MqttAndroidClient? = null
 
     /**
      * @brief Connects to the MQTT broker.
@@ -42,7 +42,7 @@ class MqttRepoImpl @Inject constructor(
         options.password = password.toCharArray()
 
         try {
-            mqttClient.connect(options, null, object : IMqttActionListener {
+            mqttClient?.connect(options, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
                     //Our onSuccess callback function will be called in case of a successful connection
                     onSuccess()
@@ -75,18 +75,48 @@ class MqttRepoImpl @Inject constructor(
         onSuccess: () -> Unit,
         onFailure: (Throwable) -> Unit
     ) {
+        try{
+            mqttClient?.subscribe(topic, qos, null, object : IMqttActionListener{
+                override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    onSuccess()
+                }
 
+                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                    onFailure(exception ?: Exception("Subscription failed"))
+                }
+
+            })
+        }catch(e : MqttException)
+        {
+            e.printStackTrace()
+            onFailure(e)
+        }
     }
 
     /**
      * @brief Unsubscribe from a topic on the MQTT broker.
      *
      * @param topic The topic to unsubscribe from.
-     * @param onSuccess A function to be called when the unsubscription is successful.
-     * @param onFailure A function to be called when the unsubscription fails.
+     * @param onSuccess A function to be called when the unsubscribe is successful.
+     * @param onFailure A function to be called when the unsubscribe fails.
      */
     override fun unsubscribe(topic: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
+        try{
+            mqttClient?.unsubscribe(topic, null, object : IMqttActionListener{
+                override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    onSuccess()
+                }
 
+                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                    onFailure(exception ?: Exception("Unsubscribe failed"))
+                }
+
+            })
+        }catch (e : MqttException)
+        {
+            e.printStackTrace()
+            onFailure(e)
+        }
     }
 
     /**
@@ -95,7 +125,7 @@ class MqttRepoImpl @Inject constructor(
      * @param callback The callback function to set.
      */
     override fun setCallback(callback: MqttCallback) {
-
+        mqttClient?.setCallback(callback)
     }
 
     /**
@@ -107,7 +137,7 @@ class MqttRepoImpl @Inject constructor(
     override fun disconnect(onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
 
         try {
-            mqttClient.disconnect(null, object : IMqttActionListener {
+            mqttClient?.disconnect(null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
                     onSuccess()
                 }
@@ -126,5 +156,5 @@ class MqttRepoImpl @Inject constructor(
      *
      * @return True if the client is connected, false otherwise.
      */
-    override fun isConnected() = mqttClient.isConnected
+    override fun isConnected() = mqttClient?.isConnected ?: false
 }

@@ -1,44 +1,63 @@
 package com.hossameid.iotalerts.presentation.settings
 
-import android.annotation.SuppressLint
-import android.app.Application
 import android.content.SharedPreferences
 import android.util.Log
-import android.widget.Toast
-import androidx.lifecycle.AndroidViewModel
-import com.hossameid.iotalerts.R
+import androidx.lifecycle.ViewModel
 import com.hossameid.iotalerts.domain.repo.MqttRepo
+import com.hossameid.iotalerts.utils.PreferencesHelper.brokerUri
+import com.hossameid.iotalerts.utils.PreferencesHelper.password
+import com.hossameid.iotalerts.utils.PreferencesHelper.username
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 @HiltViewModel
 class MqttClientViewModel @Inject constructor(
-    application: Application,
     private val mqttRepo: MqttRepo,
     private val sharedPreferences : SharedPreferences
-) : AndroidViewModel(application) {
+) : ViewModel() {
 
-    @SuppressLint("StaticFieldLeak")
-    private val context = getApplication<Application>().applicationContext
+    private val _connectionStatus : MutableStateFlow<String?> = MutableStateFlow(null)
+    val connectionStatus : StateFlow<String?> = _connectionStatus
+
+    private val _connectBtnState : MutableStateFlow<Boolean?> = MutableStateFlow(true)
+    val connectBtnState : StateFlow<Boolean?> = _connectBtnState
+
+    private val _disconnectBtnState : MutableStateFlow<Boolean> = MutableStateFlow(true)
+    val disconnectBtnState : StateFlow<Boolean> = _disconnectBtnState
 
     fun connect(uri: String, username: String, password: String) {
         //Check if the client is already connected to the current broker
         if(isConnected(uri))
         {
-            Toast.makeText(context, "Client is already connected to this broker.", Toast.LENGTH_SHORT).show()
+            _connectionStatus.value = "already connected"
             return
         }
 
+        //Disable the button to indicate loading
+        _connectBtnState.value = false
 
         mqttRepo.connect(uri, username, password,
             onSuccess = {
                 //Update the saved broker
-                updateSavedBroker(uri)
+                updateSavedBroker(uri, username, password)
+
+                //Update the state flow to notify the UI
+                _connectionStatus.value = "SUCCESS"
+
+                //Enable the button
+                _connectBtnState.value = true
 
                 Log.d("MQTT_CLIENT", "Connected successfully")
             },
             onFailure = {
-                Toast.makeText(context, "Failed to connect!", Toast.LENGTH_SHORT).show()
+                //Update the state flow to notify the UI
+                _connectionStatus.value = "FAILURE"
+
+                //Enable the button
+                _connectBtnState.value = true
+
                 Log.d("MQTT_CLIENT", "Failed to connect")
             })
     }
@@ -48,30 +67,45 @@ class MqttClientViewModel @Inject constructor(
      */
     private fun isConnected(uri: String) : Boolean
     {
-        val oldURI = sharedPreferences.getString(context.getString(R.string.BROKER_URI), "")
-        if(oldURI == uri && mqttRepo.isConnected())
-            return  true
+        val oldURI = sharedPreferences.brokerUri
 
-        return false
+        return oldURI == uri && mqttRepo.isConnected()
     }
 
     fun disconnect() {
+        //Check if the client is already disconnected
+        if(!mqttRepo.isConnected())
+        {
+            _connectionStatus.value = "Disconnected Successfully"
+            return
+        }
+
+        //Disable the button to indicate loading
+        _disconnectBtnState.value = false
+
         mqttRepo.disconnect(
             onSuccess = {
                 //Delete the saved broker
-                updateSavedBroker("")
+                updateSavedBroker("", "", "")
+                _connectionStatus.value = "Disconnected Successfully"
+
+                _disconnectBtnState.value = true
 
                 Log.d("MQTT_CLIENT", "Disconnected successfully")
             },
             onFailure = {
+                _connectionStatus.value = "Failed to disconnect!"
+
+                _disconnectBtnState.value = true
+
                 Log.d("MQTT_CLIENT", "Failed to disconnect")
             })
     }
 
-    private fun updateSavedBroker(uri: String)
+    private fun updateSavedBroker(uri: String, username: String, password: String)
     {
-        val editor = sharedPreferences.edit()
-        editor.putString(context.getString(R.string.BROKER_URI), uri)
-        editor.apply()
+        sharedPreferences.brokerUri = uri
+        sharedPreferences.username = username
+        sharedPreferences.password = password
     }
 }

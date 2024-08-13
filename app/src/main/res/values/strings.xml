@@ -17,10 +17,5 @@
     <string name="acknowledgment_status">acknowledgment status</string>
     <string name="unsubscribe">Unsubscribe</string>
     <string name="message">Message:</string>
-
-    <!-- Shared Preferences -->
-    <string name="PREF_NAME">APP_PREFERENCES</string>
-    <string name="BROKER_URI">BROKER_URI</string>
-    <string name="USERNAME">USERNAME</string>
-    <string name="PASSWORD">PASSWORD</string>
+    <string name="disconnect">Disconnect</string>
 </resources>
