@@ -12,7 +12,7 @@ object PreferencesHelper {
     private const val USERNAME = "USERNAME"
     private const val PASSWORD = "PASSWORD"
 
-    fun getSharedPreference(context: Context) =
+    fun getSharedPreference(context: Context): SharedPreferences =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
     /**

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/primaryBG_color"
-    tools:context=".presentation.alerts.AlertsFragment">
+    tools:context=".presentation.alerts.AlertsActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout"
@@ -86,23 +86,56 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/constraintLayout"
         app:layout_constrainedHeight="true"
-        app:layout_constraintBottom_toTopOf="@id/addTopicBtn"
+        app:layout_constraintBottom_toTopOf="@id/bottomDivider"
         tools:listitem="@layout/alert_item"
+        />
+
+    <com.google.android.material.divider.MaterialDivider
+        android:id="@+id/bottomDivider"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginBottom="@dimen/_10sdp"
+        app:dividerColor="@color/dividerColor"
+        app:dividerInsetEnd="@dimen/_10sdp"
+        app:dividerInsetStart="@dimen/_10sdp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/addTopicBtn"
         />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/addTopicBtn"
-        android:layout_width="@dimen/_260sdp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/_15sdp"
-        android:text="@string/add_topic"
+        android:layout_marginStart="@dimen/_15sdp"
+        android:layout_marginEnd="@dimen/_15sdp"
+        android:text="@string/subscribe"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:shapeAppearance="?attr/shapeAppearanceCornerSmall"
+        app:rippleColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/removeTopicBtn"
+        app:layout_constraintStart_toStartOf="parent"
+        />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/removeTopicBtn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_15sdp"
+        android:layout_marginEnd="@dimen/_15sdp"
+        android:layout_marginBottom="@dimen/_15sdp"
+        android:text="@string/unsubscribe"
         android:textColor="@color/white"
         android:textStyle="bold"
         app:shapeAppearance="?attr/shapeAppearanceCornerSmall"
         app:rippleColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/addTopicBtn"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,20 +1,38 @@
 package com.hossameid.iotalerts.data.repo
 
 import android.content.Context
+import android.util.Log
+import com.google.gson.Gson
+import com.hossameid.iotalerts.data.db.TopicsDao
+import com.hossameid.iotalerts.domain.models.AlertDto
+import com.hossameid.iotalerts.domain.models.TopicModel
+import com.hossameid.iotalerts.domain.models.TopicResponseModel
+import com.hossameid.iotalerts.domain.repo.AlertsRepo
 import com.hossameid.iotalerts.domain.repo.MqttRepo
+import com.hossameid.iotalerts.utils.AlertReceivedDialog
 import info.mqtt.android.service.MqttAndroidClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.IMqttToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
-import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
+import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
 
 class MqttRepoImpl @Inject constructor(
-    private val context: Context
+    private val context: Context,
+    private val alertsRepo: AlertsRepo,
+    private val topicsDao: TopicsDao
 ) : MqttRepo {
     private var mqttClient: MqttAndroidClient? = null
+    private lateinit var options: MqttConnectOptions
 
     /**
      * @brief Connects to the MQTT broker.
@@ -32,12 +50,11 @@ class MqttRepoImpl @Inject constructor(
         onSuccess: () -> Unit,
         onFailure: (Throwable) -> Unit
     ) {
-        //Generates a random ID for the client
-        val clientID = MqttClient.generateClientId()
-        mqttClient = MqttAndroidClient(context, brokerURI, clientID)
+
+        mqttClient = MqttAndroidClient(context, brokerURI, "mqttAlerts")
 
         //Set the username and password used for authentication
-        val options = MqttConnectOptions()
+        options = MqttConnectOptions()
         options.userName = username
         options.password = password.toCharArray()
 
@@ -61,6 +78,24 @@ class MqttRepoImpl @Inject constructor(
 
     }
 
+    override fun connect() {
+        try {
+            mqttClient?.connect(options, null, object : IMqttActionListener {
+                override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    resubscribeToTopics()
+                }
+
+                override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+                    //repeat until connected
+                    Log.d("MQTT_CLIENT", "onFailure: Repeat attempt connection")
+                    connect()
+                }
+            })
+        } catch (e: MqttException) {
+            connect()
+        }
+    }
+
     /**
      * @brief Subscribe to a topic on the MQTT broker to be notified when it changes.
      *
@@ -75,9 +110,15 @@ class MqttRepoImpl @Inject constructor(
         onSuccess: () -> Unit,
         onFailure: (Throwable) -> Unit
     ) {
-        try{
-            mqttClient?.subscribe(topic, qos, null, object : IMqttActionListener{
+        try {
+            mqttClient?.subscribe(topic, qos, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    runBlocking {
+                        withContext(Dispatchers.IO)
+                        {
+                            topicsDao.insertTopic(TopicModel(topic = topic))
+                        }
+                    }
                     onSuccess()
                 }
 
@@ -86,8 +127,7 @@ class MqttRepoImpl @Inject constructor(
                 }
 
             })
-        }catch(e : MqttException)
-        {
+        } catch (e: MqttException) {
             e.printStackTrace()
             onFailure(e)
         }
@@ -101,9 +141,15 @@ class MqttRepoImpl @Inject constructor(
      * @param onFailure A function to be called when the unsubscribe fails.
      */
     override fun unsubscribe(topic: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
-        try{
-            mqttClient?.unsubscribe(topic, null, object : IMqttActionListener{
+        try {
+            mqttClient?.unsubscribe(topic, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    runBlocking {
+                        withContext(Dispatchers.IO)
+                        {
+                            topicsDao.deleteTopic(topic)
+                        }
+                    }
                     onSuccess()
                 }
 
@@ -112,8 +158,7 @@ class MqttRepoImpl @Inject constructor(
                 }
 
             })
-        }catch (e : MqttException)
-        {
+        } catch (e: MqttException) {
             e.printStackTrace()
             onFailure(e)
         }
@@ -122,10 +167,52 @@ class MqttRepoImpl @Inject constructor(
     /**
      * @brief Sets a callback function for the MQTT client
      *
-     * @param callback The callback function to set.
      */
-    override fun setCallback(callback: MqttCallback) {
-        mqttClient?.setCallback(callback)
+    override fun setCallback() {
+        mqttClient?.setCallback(object : MqttCallback {
+            override fun connectionLost(cause: Throwable?) {
+                Log.d("MQTT_CLIENT", "connectionLost: Attempting reconnect")
+
+                //Try to connect again
+                connect()
+            }
+
+            override fun messageArrived(topic: String?, message: MqttMessage?) {
+                Log.d("MQTT_CLIENT", "Message arrived")
+
+                val alert: AlertDto = Gson().fromJson(message.toString(), AlertDto::class.java)
+                val alertModel = TopicResponseModel(
+                    topic = topic!!,
+                    alertType = alert.alert,
+                    message = alert.message
+                )
+
+                CoroutineScope(Dispatchers.Main).launch {
+                    val alertDialog = AlertReceivedDialog(context, alertsRepo)
+                    alertDialog.showDialog(alertModel)
+
+                    withContext(Dispatchers.IO){
+                        //Save the alert to the database
+                        alertsRepo.addReceivedAlert(alertModel)
+
+                    }
+                }
+            }
+
+            override fun deliveryComplete(token: IMqttDeliveryToken?) {
+            }
+
+        })
+    }
+
+    private fun resubscribeToTopics() {
+        runBlocking {
+            val topicsList = async { topicsDao.getAllTopics() }
+
+            for (topic in topicsList.await()) {
+                mqttClient?.subscribe(topic.topic, 1)
+            }
+        }
     }
 
     /**
@@ -139,6 +226,12 @@ class MqttRepoImpl @Inject constructor(
         try {
             mqttClient?.disconnect(null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    runBlocking {
+                        withContext(Dispatchers.IO)
+                        {
+                            topicsDao.deleteAllTopics()
+                        }
+                    }
                     onSuccess()
                 }
 

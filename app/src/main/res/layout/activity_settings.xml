@@ -5,14 +5,34 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/primaryBG_color"
-    android:paddingTop="100dp"
     android:paddingBottom="100dp"
-    tools:context=".presentation.settings.SettingsFragment">
+    tools:context=".presentation.settings.SettingsActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/toolbarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/_20sdp"
+        android:fitsSystemWindows="true"
+        android:background="?attr/primaryBG_color"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        >
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            app:titleTextColor="@color/black"
+            android:layout_height="?attr/actionBarSize" />
+
+    </com.google.android.material.appbar.AppBarLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/brokerURILayout"
         android:layout_width="@dimen/_260sdp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_30sdp"
         android:layout_marginStart="@dimen/_40sdp"
         android:layout_marginEnd="@dimen/_40sdp"
         android:hint="@string/broker_uri_label"
@@ -22,7 +42,7 @@
         app:errorEnabled="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbarLayout"
         app:layout_constraintBottom_toTopOf="@id/usernameLayout"
         >
         <com.google.android.material.textfield.TextInputEditText

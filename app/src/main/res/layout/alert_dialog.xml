@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_margin="@dimen/_5sdp"
+
     app:cardCornerRadius="@dimen/_5sdp"
     app:cardElevation="@dimen/_5sdp">
 
@@ -12,7 +12,7 @@
         android:id="@+id/alertContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/white"
+        android:background="@color/greyBG"
         android:padding="@dimen/_10sdp"
         >
 
@@ -29,13 +29,12 @@
 
             />
 
-        <com.google.android.material.button.MaterialButton
-            style="@style/Widget.Material3.Button.IconButton"
-            android:id="@+id/deleteButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:icon="@drawable/baseline_delete_24"
-            app:iconSize="@dimen/_23sdp"
+        <ImageButton
+            android:id="@+id/closeButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/baseline_close_24"
+            android:backgroundTint="@color/greyBG"
             android:textColor="@color/white"
             android:contentDescription="@string/delete_alert_from_history"
             app:layout_constraintBottom_toBottomOf="@+id/topicNameTextView"
@@ -43,13 +42,14 @@
             app:layout_constraintTop_toTopOf="@+id/topicNameTextView"
             />
 
-        <com.google.android.material.divider.MaterialDivider
+        <LinearLayout
+            android:orientation="horizontal"
             android:id="@+id/divider"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="3dp"
             android:layout_weight="1"
             android:layout_marginTop="@dimen/_10sdp"
-            app:dividerColor="@color/dividerColor"
+            android:background="@color/dividerColor"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/topicNameTextView"
@@ -74,13 +74,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_5sdp"
+            android:gravity="center"
             android:textColor="@color/black"
             android:textSize="@dimen/_15sdp"
-            android:gravity="center"
             app:layout_constrainedHeight="true"
             app:layout_constrainedWidth="true"
             app:layout_constraintBottom_toBottomOf="@+id/dateTextView"
-            app:layout_constraintEnd_toStartOf="@+id/acknowledgeImageView"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/dateTextView"
             app:layout_constraintTop_toTopOf="@+id/dateTextView"
             tools:ignore="HardcodedText" />
@@ -96,35 +96,39 @@
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/dateTextView"
-             />
+            />
 
         <TextView
             android:id="@+id/messageContentTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_5sdp"
-            android:layout_marginEnd="@dimen/_5sdp"
             android:gravity="center"
             android:textColor="@color/black"
             android:textSize="@dimen/_15sdp"
-            app:layout_constrainedWidth="true"
             app:layout_constrainedHeight="true"
+            app:layout_constrainedWidth="true"
             app:layout_constraintBottom_toBottomOf="@+id/messageTextView"
-            app:layout_constraintEnd_toStartOf="@+id/acknowledgeImageView"
-            app:layout_constraintStart_toEndOf="@id/messageTextView"
-            app:layout_constraintTop_toTopOf="@+id/messageTextView"
-            />
-
-        <ImageView
-            android:id="@+id/acknowledgeImageView"
-            android:layout_width="@dimen/_45sdp"
-            android:layout_height="@dimen/_45sdp"
-            android:contentDescription="@string/acknowledgment_status"
-            android:src="@drawable/baseline_check_24"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider" />
+            app:layout_constraintStart_toEndOf="@id/messageTextView"
+            app:layout_constraintTop_toTopOf="@+id/messageTextView" />
 
+
+        <Button
+            android:id="@+id/acknowledgeBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:text="@string/acknowledge"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:backgroundTint="@color/darkBlue"
+            app:layout_constraintTop_toBottomOf="@id/messageContentTextView"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Small"
+            />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 

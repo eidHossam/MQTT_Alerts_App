@@ -1,49 +1,44 @@
 package com.hossameid.iotalerts.presentation.settings
 
-
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.MenuItem
 import android.widget.Toast
-import androidx.fragment.app.viewModels
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.hossameid.iotalerts.databinding.FragmentSecondBinding
+import com.hossameid.iotalerts.data.services.MqttService
+import com.hossameid.iotalerts.databinding.ActivitySettingsBinding
+import com.hossameid.iotalerts.presentation.MqttClientViewModel
 import com.hossameid.iotalerts.utils.PreferencesHelper.brokerUri
 import com.hossameid.iotalerts.utils.PreferencesHelper.username
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * A simple [Fragment] subclass as the second destination in the navigation.
- */
 @AndroidEntryPoint
-class SettingsFragment : Fragment() {
+class SettingsActivity : AppCompatActivity() {
     private val viewModel: MqttClientViewModel by viewModels()
-    private var _binding: FragmentSecondBinding? = null
+    private lateinit var binding: ActivitySettingsBinding
+    private lateinit var serviceIntent: Intent
 
     @Inject
     lateinit var sharedPreference: SharedPreferences
 
-    // This property is only valid between onCreateView and
-    // onDestroyView.
-    private val binding get() = _binding!!
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivitySettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+        //Setup the toolbar
+        setSupportActionBar(binding.toolbar)
 
-        _binding = FragmentSecondBinding.inflate(inflater, container, false)
-        return binding.root
-
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+        // Enable the Up button
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowHomeEnabled(true)
 
         subscribeToObservers()
 
@@ -66,6 +61,8 @@ class SettingsFragment : Fragment() {
         binding.disconnectBtn.setOnClickListener {
             viewModel.disconnect()
         }
+
+        serviceIntent = Intent(this@SettingsActivity, MqttService::class.java)
     }
 
     /**
@@ -86,16 +83,16 @@ class SettingsFragment : Fragment() {
      * @brief Subscribe to the view model observers
      */
     private fun subscribeToObservers() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.Main) {
             launch {
                 viewModel.connectBtnState.collect {
-                    binding.connectBtn.isEnabled = it ?: true
+                    binding.connectBtn.isEnabled = it
                 }
             }
 
             launch {
                 viewModel.disconnectBtnState.collect {
-                    binding.disconnectBtn.isEnabled = it ?: true
+                    binding.disconnectBtn.isEnabled = it
                 }
             }
 
@@ -103,29 +100,47 @@ class SettingsFragment : Fragment() {
                 viewModel.connectionStatus.collect {
                     when (it) {
                         //End the fragment in case of a successful connection
-                        "SUCCESS" -> activity?.supportFragmentManager?.popBackStack()
+                        "SUCCESS" -> {
+                            //Start the foreground service
+                            ContextCompat.startForegroundService(this@SettingsActivity, serviceIntent)
+
+                            finish()
+                        }
 
                         "already connected" ->
                             Toast.makeText(
-                                context,
+                                this@SettingsActivity,
                                 "Client is already connected to this broker.",
                                 Toast.LENGTH_SHORT
                             )
                                 .show()
 
                         "FAILURE" -> Toast.makeText(
-                            context,
+                            this@SettingsActivity,
                             "Failed to connect!",
                             Toast.LENGTH_SHORT
                         )
                             .show()
 
                         "Disconnected Successfully" ->
-                            Toast.makeText(context, "Disconnected Successfully", Toast.LENGTH_SHORT)
+                        {
+                            stopService(serviceIntent)
+
+                            Toast.makeText(
+                                this@SettingsActivity,
+                                "Disconnected Successfully",
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
+                        }
+
 
                         "Failed to disconnect!" ->
-                            Toast.makeText(context, "Failed to disconnect!", Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                this@SettingsActivity,
+                                "Failed to disconnect!",
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                     }
 
@@ -134,8 +149,15 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    // Handle the back button press
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                // Finish the current activity and go back
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }

@@ -18,4 +18,10 @@
     <string name="unsubscribe">Unsubscribe</string>
     <string name="message">Message:</string>
     <string name="disconnect">Disconnect</string>
+    <string name="topic">Topic</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="delete_alert_from_history">Delete alert from history</string>
+    <string name="acknowledge">Acknowledge</string>
 </resources>

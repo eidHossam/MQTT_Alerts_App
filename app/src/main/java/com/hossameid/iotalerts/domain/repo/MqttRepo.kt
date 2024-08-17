@@ -1,7 +1,5 @@
 package com.hossameid.iotalerts.domain.repo
 
-import org.eclipse.paho.client.mqttv3.MqttCallback
-
 /**
  * Defines the interface for any class that wants to implement
  * the MqttClient.
@@ -24,6 +22,8 @@ interface MqttRepo {
         onFailure: (Throwable) -> Unit
         )
 
+    fun connect()
+
     /**
      * @brief Subscribe to a topic on the MQTT broker to be notified when it changes.
      *
@@ -43,17 +43,16 @@ interface MqttRepo {
      * @brief Unsubscribe from a topic on the MQTT broker.
      *
      * @param topic The topic to unsubscribe from.
-     * @param onSuccess A function to be called when the unsubscription is successful.
-     * @param onFailure A function to be called when the unsubscription fails.
+     * @param onSuccess A function to be called when the unsubscribe is successful.
+     * @param onFailure A function to be called when the unsubscribe fails.
      */
     fun unsubscribe(topic: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit)
 
     /**
      * @brief Sets a callback function for the MQTT client
      *
-     * @param callback The callback function to set.
      */
-    fun setCallback(callback: MqttCallback)
+    fun setCallback()
 
     /**
      * @brief Disconnects from the MQTT broker.
