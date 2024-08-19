@@ -1,6 +1,7 @@
 package com.hossameid.iotalerts.presentation.di
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.hossameid.iotalerts.data.db.AlertsDao
 import com.hossameid.iotalerts.data.db.TopicsDao
 import com.hossameid.iotalerts.data.repo.AlertsRepoImpl
@@ -23,8 +24,9 @@ object MqttModule {
     fun providesMqttRepo(
         @ApplicationContext context: Context,
         alertsRepo: AlertsRepo,
-        topicsDao: TopicsDao
-    ): MqttRepo = MqttRepoImpl(context, alertsRepo, topicsDao)
+        topicsDao: TopicsDao,
+        sharedPreferences: SharedPreferences
+    ): MqttRepo = MqttRepoImpl(context, alertsRepo, topicsDao, sharedPreferences)
 
     @Provides
     fun providesAlertsRepo(alertsDao: AlertsDao): AlertsRepo = AlertsRepoImpl(alertsDao)

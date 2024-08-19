@@ -19,7 +19,7 @@ class MediaPlayer {
             val resourceId = when (alarmType) {
                 0 -> R.raw.normal_alarm
                 1 -> R.raw.warning_alert
-                2 -> R.raw.danger_alert
+                2 -> R.raw.critical_alarm
                 else -> R.raw.normal_alarm //default to normal alarm
             }
 

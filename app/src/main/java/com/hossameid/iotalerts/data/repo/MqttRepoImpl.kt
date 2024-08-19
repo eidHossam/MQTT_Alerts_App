@@ -1,6 +1,7 @@
 package com.hossameid.iotalerts.data.repo
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import com.google.gson.Gson
 import com.hossameid.iotalerts.data.db.TopicsDao
@@ -11,6 +12,7 @@ import com.hossameid.iotalerts.domain.repo.AlertsRepo
 import com.hossameid.iotalerts.domain.repo.MqttRepo
 import com.hossameid.iotalerts.utils.AlertReceivedDialog
 import com.hossameid.iotalerts.utils.MediaPlayer
+import com.hossameid.iotalerts.utils.PreferencesHelper.brokerUri
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +24,7 @@ import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.IMqttToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
+import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
@@ -30,10 +33,12 @@ import javax.inject.Inject
 class MqttRepoImpl @Inject constructor(
     private val context: Context,
     private val alertsRepo: AlertsRepo,
-    private val topicsDao: TopicsDao
+    private val topicsDao: TopicsDao,
+    private val sharedPreferences: SharedPreferences
 ) : MqttRepo {
     private var mqttClient: MqttAndroidClient? = null
     private lateinit var options: MqttConnectOptions
+    private var attemptReconnection: Boolean = true
 
     /**
      * @brief Connects to the MQTT broker.
@@ -51,17 +56,28 @@ class MqttRepoImpl @Inject constructor(
         onSuccess: () -> Unit,
         onFailure: (Throwable) -> Unit
     ) {
-
-        mqttClient = MqttAndroidClient(context, brokerURI, "mqttAlerts")
+        val clientID = MqttClient.generateClientId()
+        mqttClient = MqttAndroidClient(context, brokerURI, clientID)
 
         //Set the username and password used for authentication
         options = MqttConnectOptions()
         options.userName = username
         options.password = password.toCharArray()
 
+        attemptReconnection = true
         try {
             mqttClient?.connect(options, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    //If this is the our old broker reconnect to the topics
+                    if (sharedPreferences.brokerUri == brokerURI)
+                        resubscribeToTopics()
+                    else
+                        runBlocking {
+                            withContext(Dispatchers.IO)
+                            {
+                                topicsDao.deleteAllTopics()
+                            }
+                        }
                     //Our onSuccess callback function will be called in case of a successful connection
                     onSuccess()
                 }
@@ -118,7 +134,7 @@ class MqttRepoImpl @Inject constructor(
                         withContext(Dispatchers.IO)
                         {
                             //If the subscription was successful store the topic name in the database
-                            topicsDao.insertTopic(TopicModel(topic = topic))
+                            topicsDao.insertTopic(TopicModel(topic))
                         }
                     }
                     onSuccess()
@@ -174,10 +190,11 @@ class MqttRepoImpl @Inject constructor(
     override fun setCallback() {
         mqttClient?.setCallback(object : MqttCallback {
             override fun connectionLost(cause: Throwable?) {
-                Log.d("MQTT_CLIENT", "connectionLost: Attempting reconnect")
-
                 //Try to connect again
-                connect()
+                if (attemptReconnection) {
+                    Log.d("MQTT_CLIENT", "connectionLost: Attempting reconnect")
+                    connect()
+                }
             }
 
             override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -193,8 +210,7 @@ class MqttRepoImpl @Inject constructor(
                 )
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    if(checkIfAlertEligible(topic, alert.alert))
-                    {
+                    if (checkIfAlertEligible(topic, alert.alert)) {
                         //Save the alert to the database
                         alertsRepo.addReceivedAlert(alertModel)
 
@@ -225,7 +241,7 @@ class MqttRepoImpl @Inject constructor(
      * @note The only case where we don't show the alert is when we are in danger state
      * then went to warning.
      */
-    private suspend fun checkIfAlertEligible(topic: String, currentAlertType: Int): Boolean{
+    private suspend fun checkIfAlertEligible(topic: String, currentAlertType: Int): Boolean {
 
         return withContext(Dispatchers.IO) {
             val latestAlertType = alertsRepo.getLatestAlertType(topic)
@@ -244,6 +260,7 @@ class MqttRepoImpl @Inject constructor(
 
             for (topic in topicsList.await()) {
                 mqttClient?.subscribe(topic.topic, 1)
+                Log.d("MQTT_CLIENT", "resubscribeToTopic: ${topic.topic}")
             }
         }
     }
@@ -259,6 +276,8 @@ class MqttRepoImpl @Inject constructor(
         try {
             mqttClient?.disconnect(null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
+                    attemptReconnection = false
+
                     runBlocking {
                         withContext(Dispatchers.IO)
                         {

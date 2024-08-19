@@ -1,4 +1,4 @@
-package com.hossameid.iotalerts.data.services
+package com.hossameid.iotalerts.system.services
 
 import android.app.Notification
 import android.app.NotificationChannel

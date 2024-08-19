@@ -12,7 +12,7 @@
         android:id="@+id/alertContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/greyBG"
+        android:background="@color/darkGreyBG"
         android:padding="@dimen/_10sdp"
         >
 
@@ -34,7 +34,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/baseline_close_24"
-            android:backgroundTint="@color/greyBG"
+            android:backgroundTint="@color/darkGreyBG"
             android:textColor="@color/white"
             android:contentDescription="@string/delete_alert_from_history"
             app:layout_constraintBottom_toBottomOf="@+id/topicNameTextView"
@@ -49,7 +49,7 @@
             android:layout_height="3dp"
             android:layout_weight="1"
             android:layout_marginTop="@dimen/_10sdp"
-            android:background="@color/dividerColor"
+            android:background="@color/white"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/topicNameTextView"

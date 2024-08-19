@@ -9,7 +9,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.hossameid.iotalerts.data.services.MqttService
+import com.hossameid.iotalerts.system.services.MqttService
 import com.hossameid.iotalerts.databinding.ActivitySettingsBinding
 import com.hossameid.iotalerts.presentation.MqttClientViewModel
 import com.hossameid.iotalerts.utils.PreferencesHelper.brokerUri

@@ -94,10 +94,11 @@ class AlertReceivedDialog(
         }
 
         acknowledgeBtn.setOnClickListener {
+            close()
+
             CoroutineScope(Dispatchers.IO).launch {
                 alertsRepo.acknowledgeAlert(alert.timestamp)
             }
-            close()
         }
 
         open()
