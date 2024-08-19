@@ -16,4 +16,6 @@ class AlertsRepoImpl @Inject constructor(private val alertsDao: AlertsDao) : Ale
     override suspend fun removeTopic(topic: String) = alertsDao.deleteTopic(topic)
 
     override suspend fun acknowledgeAlert(timestamp: String) = alertsDao.acknowledgeAlert(timestamp)
+
+    override suspend fun getLatestAlertType(topic: String): Int = alertsDao.getLatestAlertType(topic)
 }

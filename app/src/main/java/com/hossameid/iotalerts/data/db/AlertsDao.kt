@@ -40,7 +40,11 @@ interface AlertsDao {
     suspend fun acknowledgeAlert(timestamp: String)
 
     @Query("SELECT * FROM alerts")
-    fun getAllAlerts() : LiveData<List<TopicResponseModel>>
+    fun getAllAlerts(): LiveData<List<TopicResponseModel>>
 
-
+    /**
+     * This will return the type of the latest alert and -1 if there are no alerts yet
+     */
+    @Query("""SELECT COALESCE((SELECT type FROM alerts WHERE topic = :topic ORDER BY timestamp DESC LIMIT 1), -1)""")
+    suspend fun getLatestAlertType(topic: String): Int
 }

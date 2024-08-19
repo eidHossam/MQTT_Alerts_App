@@ -10,6 +10,7 @@ import com.hossameid.iotalerts.domain.models.TopicResponseModel
 import com.hossameid.iotalerts.domain.repo.AlertsRepo
 import com.hossameid.iotalerts.domain.repo.MqttRepo
 import com.hossameid.iotalerts.utils.AlertReceivedDialog
+import com.hossameid.iotalerts.utils.MediaPlayer
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -116,6 +117,7 @@ class MqttRepoImpl @Inject constructor(
                     runBlocking {
                         withContext(Dispatchers.IO)
                         {
+                            //If the subscription was successful store the topic name in the database
                             topicsDao.insertTopic(TopicModel(topic = topic))
                         }
                     }
@@ -147,6 +149,7 @@ class MqttRepoImpl @Inject constructor(
                     runBlocking {
                         withContext(Dispatchers.IO)
                         {
+                            //If we unsubscribed successfully remove the topic from the database
                             topicsDao.deleteTopic(topic)
                         }
                     }
@@ -179,22 +182,31 @@ class MqttRepoImpl @Inject constructor(
 
             override fun messageArrived(topic: String?, message: MqttMessage?) {
                 Log.d("MQTT_CLIENT", "Message arrived")
-
+                //Parse the JSON we received from the alert into AlertDto object
                 val alert: AlertDto = Gson().fromJson(message.toString(), AlertDto::class.java)
+
+                //Make an TopicResponseModel to store it in the database
                 val alertModel = TopicResponseModel(
                     topic = topic!!,
                     alertType = alert.alert,
                     message = alert.message
                 )
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    val alertDialog = AlertReceivedDialog(context, alertsRepo)
-                    alertDialog.showDialog(alertModel)
-
-                    withContext(Dispatchers.IO){
+                CoroutineScope(Dispatchers.IO).launch {
+                    if(checkIfAlertEligible(topic, alert.alert))
+                    {
                         //Save the alert to the database
                         alertsRepo.addReceivedAlert(alertModel)
 
+                        withContext(Dispatchers.Main)
+                        {
+                            //play the right alarm
+                            MediaPlayer.playAlarm(context, alertModel.alertType)
+
+                            //Open the alert overlay
+                            val alertDialog = AlertReceivedDialog(context, alertsRepo)
+                            alertDialog.showDialog(alertModel)
+                        }
                     }
                 }
             }
@@ -205,6 +217,27 @@ class MqttRepoImpl @Inject constructor(
         })
     }
 
+    /**
+     * @brief Check if we should show the current alert in both the overlay and the alerts history list.
+     *
+     * @param currentAlertType The type of the received alert.
+     *
+     * @note The only case where we don't show the alert is when we are in danger state
+     * then went to warning.
+     */
+    private suspend fun checkIfAlertEligible(topic: String, currentAlertType: Int): Boolean{
+
+        return withContext(Dispatchers.IO) {
+            val latestAlertType = alertsRepo.getLatestAlertType(topic)
+            Log.d("MQTT_CLIENT", "checkIfAlertEligible: $latestAlertType")
+            //Don't play the alarm if the current is warning and the last is danger or the status didn't change
+            !((currentAlertType == 1) and (latestAlertType == 2) or (currentAlertType == latestAlertType))
+        }
+    }
+
+    /**
+     * @brief Resubscribe to all the old topics after connecting again after losing the connection.
+     */
     private fun resubscribeToTopics() {
         runBlocking {
             val topicsList = async { topicsDao.getAllTopics() }

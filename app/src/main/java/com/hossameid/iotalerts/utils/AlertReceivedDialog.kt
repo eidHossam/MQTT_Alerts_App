@@ -57,6 +57,9 @@ class AlertReceivedDialog(
 
     private fun close() {
         windowManager.removeView(dialogView)
+
+        //Stop the currently playing alarm
+        MediaPlayer.stopAlarm()
     }
 
     fun showDialog(alert: TopicResponseModel) {
@@ -85,7 +88,10 @@ class AlertReceivedDialog(
             )
         }
 
-        closeBtn.setOnClickListener { close() }
+        //Set the listener for the overlay close button
+        closeBtn.setOnClickListener {
+            close()
+        }
 
         acknowledgeBtn.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
@@ -93,6 +99,7 @@ class AlertReceivedDialog(
             }
             close()
         }
+
         open()
     }
 }

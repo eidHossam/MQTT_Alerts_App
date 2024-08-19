@@ -38,4 +38,13 @@ interface AlertsRepo{
      * @param timestamp Timestamp of the alert to be acknowledged.
      */
     suspend fun acknowledgeAlert(timestamp: String)
+
+    /**
+     * @brief return the type of the latest alert for the specified topic
+     *
+     * @param topic the topic to get the latest alert for
+     *
+     * @return 0 -> normal, 1 -> warning, 2-> danger
+     */
+    suspend fun getLatestAlertType(topic: String): Int
 }
