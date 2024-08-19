@@ -39,7 +39,10 @@ interface AlertsDao {
     @Query("UPDATE alerts SET acknowledged = 1 WHERE timestamp = :timestamp")
     suspend fun acknowledgeAlert(timestamp: String)
 
-    @Query("SELECT * FROM alerts")
+    /**
+     * Get all the alerts and order them by the latest first
+     */
+    @Query("SELECT * FROM alerts ORDER BY timestamp DESC")
     fun getAllAlerts(): LiveData<List<TopicResponseModel>>
 
     /**
